@@ -16,6 +16,7 @@ from mlserver import transfer_syntax
 from mlserver.core import DicomSaver
 from mlserver.database import Database
 from mlserver.executor import DelayedExecutor
+from mlserver.model_cxr_edema import PseudoModel
 from mlserver.utils import logged_method
 from mlserver.utils import try_except
 
@@ -47,10 +48,11 @@ class ApplicationEntity(_ApplicationEntity):
             *args, **kwargs)
 
 
+# TODO: need to customize this for our cxr algorithm
 class Helper(object):
     def __init__(self):
         """Shared resources across all threads."""
-        # self._model = Model() #TODO: replace this with our cxr model
+        self._model = PseudoModel()
         self._executor = DelayedExecutor()
         self._executor.start()
 
