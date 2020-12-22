@@ -1,0 +1,1 @@
+python -m pynetdicom storescu 127.0.0.1 11114 /data/vision/polina/projects/chestxray/data_v2/dicom_reports/p13348466/s52658141/02d85295-abdbb417-27a00220-2b32b283-8fd7f3da.dcm -d -cx

@@ -43,6 +43,7 @@ class ApplicationEntity(_ApplicationEntity):
     def start_server(self, *args, **kwargs):
         logging.info('Server started.')
         print('Server started.')
+        print('Listening: ({},{})...'.format(self._host, self._port))
         super(ApplicationEntity, self).start_server(
             (self._host, self._port),
             *args, **kwargs)
@@ -64,15 +65,17 @@ class Helper(object):
     @try_except(error_code=0xA700)
     @logged_method
     def handle_c_store(self, event):
-        ds = event.dataset
-        ds.file_meta = event.file_meta
-        ds.is_little_endian = ds.file_meta.TransferSyntaxUID.is_little_endian
-        ds.is_implicit_VR = ds.file_meta.TransferSyntaxUID.is_implicit_VR
+        print('Triggered by EVT_C_STORE')
+        # ds = event.dataset
+        # ds.file_meta = event.file_meta
+        # ds.is_little_endian = ds.file_meta.TransferSyntaxUID.is_little_endian
+        # ds.is_implicit_VR = ds.file_meta.TransferSyntaxUID.is_implicit_VR
 
-        DicomSaver()(ds)
-        Database().add(cls=Database.Patient, ds=ds).add(cls=Database.Study, ds=ds)
+        # DicomSaver()(ds)
+        # Database().add(cls=Database.Patient, ds=ds).add(cls=Database.Study, ds=ds)
 
-        study_name = ds.AccessionNumber
+        # study_name = ds.AccessionNumber
+        study_name = 'fake dicom'
         self._executor.delayed_run(
             key=study_name,
             fn=functools.partial(self._process_study, study_name=study_name))
@@ -80,11 +83,12 @@ class Helper(object):
     @try_except(error_code=0xC2FF)
     @logged_method
     def _process_study(self, study_name):
-        NiftiConverter()(study_name)
-        self._model(study_name)
-        JsonConverter()(study_name, organs=self._model.organs)
-        SlicePlotter()(study_name)
-        Database().add(Database.SegmentationVol, study_name=study_name)
+        # NiftiConverter()(study_name)
+        edema_severity = self._model(study_name)
+        # JsonConverter()(study_name, organs=self._model.organs)
+        # SlicePlotter()(study_name)
+        # Database().add(Database.SegmentationVol, study_name=study_name)
+        print('Study {} has edema severity of {}'.format(study_name, edema_severity))
 
 
 def main(_):

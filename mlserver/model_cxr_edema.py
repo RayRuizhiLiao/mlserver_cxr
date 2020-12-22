@@ -22,7 +22,7 @@ class PseudoModel(object):
 
     	return
 
-    @on_cpu
+    #@on_cpu
     @logged_method
     @profiled_method
     def __call__(self, study_name):
