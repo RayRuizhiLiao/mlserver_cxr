@@ -4,6 +4,9 @@ import time
 from absl import flags
 from absl import logging
 
+import cv2
+import numpy as np
+
 flags.DEFINE_string('root_dir', '/mnt/data', 'Write received objects to directory.')
 FLAGS = flags.FLAGS
 
@@ -103,3 +106,18 @@ class Path(object):
             return slice_dir
         else:
             return os.path.join(slice_dir, f'{study_name}.png')
+
+
+def dicom_to_png(ds, png_dir, png_name):
+    img = ds.pixel_array
+    img_max_value = ds.LargestImagePixelValue
+    img = img.astype(np.double)
+    img = img/img_max_value
+    img = 65535*img
+    img = img.astype(np.uint16)
+
+    png_path = os.path.join(png_dir, png_name+'.png')
+    cv2.imwrite(png_path, img)
+    print(f"Saved png at {png_path}!")
+
+    return

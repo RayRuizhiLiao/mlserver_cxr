@@ -2,6 +2,8 @@ import functools
 import gin
 import itertools
 import warnings
+import cv2
+import os
 
 from absl import app
 from absl import flags
@@ -19,6 +21,7 @@ from mlserver.executor import DelayedExecutor
 from mlserver.model_cxr_edema import PseudoModel
 from mlserver.utils import logged_method
 from mlserver.utils import try_except
+from mlserver.utils import dicom_to_png
 
 
 flags.DEFINE_string('gin_file', 'config.gin', 'Gin configuration file to load.')
@@ -27,11 +30,12 @@ FLAGS = flags.FLAGS
 
 @gin.configurable
 class ApplicationEntity(_ApplicationEntity):
-    def __init__(self, ae_title, host, port):
+    def __init__(self, ae_title, host, port, output_dir='./'):
         super(ApplicationEntity, self).__init__(ae_title=ae_title)
 
         self._host = host
         self._port = port
+        self.output_dir = output_dir
 
         contexts = itertools.chain(
             StoragePresentationContexts,
@@ -51,11 +55,12 @@ class ApplicationEntity(_ApplicationEntity):
 
 # TODO: need to customize this for our cxr algorithm
 class Helper(object):
-    def __init__(self):
+    def __init__(self, output_dir):
         """Shared resources across all threads."""
         self._model = PseudoModel()
         self._executor = DelayedExecutor()
         self._executor.start()
+        self._output_dir = output_dir
 
     @property
     def handlers(self):
@@ -66,8 +71,8 @@ class Helper(object):
     @logged_method
     def handle_c_store(self, event):
         print('Triggered by EVT_C_STORE')
-        # ds = event.dataset
-        # ds.file_meta = event.file_meta
+        ds = event.dataset
+        ds.file_meta = event.file_meta
         # ds.is_little_endian = ds.file_meta.TransferSyntaxUID.is_little_endian
         # ds.is_implicit_VR = ds.file_meta.TransferSyntaxUID.is_implicit_VR
 
@@ -75,7 +80,8 @@ class Helper(object):
         # Database().add(cls=Database.Patient, ds=ds).add(cls=Database.Study, ds=ds)
 
         # study_name = ds.AccessionNumber
-        study_name = 'fake dicom'
+        study_name = ds.StudyID
+        dicom_to_png(ds, self._output_dir, study_name)
         self._executor.delayed_run(
             key=study_name,
             fn=functools.partial(self._process_study, study_name=study_name))
@@ -84,7 +90,17 @@ class Helper(object):
     @logged_method
     def _process_study(self, study_name):
         # NiftiConverter()(study_name)
+
+        png_path = os.path.join(self._output_dir, f"{study_name}.png")
+        print(png_path)
+        img = cv2.imread(png_path)
+
         edema_severity = self._model(study_name)
+
+        result_png_path = os.path.join(self._output_dir, f"{study_name}_{edema_severity}.png")
+        print(result_png_path)
+        cv2.imwrite(result_png_path, img)
+
         # JsonConverter()(study_name, organs=self._model.organs)
         # SlicePlotter()(study_name)
         # Database().add(Database.SegmentationVol, study_name=study_name)
@@ -97,7 +113,7 @@ def main(_):
     logging.get_absl_handler().use_absl_log_file('mlserver')
 
     ae = ApplicationEntity()
-    ae.start_server(evt_handlers=Helper().handlers)
+    ae.start_server(evt_handlers=Helper(output_dir=ae.output_dir).handlers)
 
 
 if __name__ == '__main__':

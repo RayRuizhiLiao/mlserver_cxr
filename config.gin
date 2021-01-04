@@ -1,6 +1,7 @@
 ApplicationEntity.ae_title = 'ABDOMINALAI'
 ApplicationEntity.host = ''
 ApplicationEntity.port = 11114
+ApplicationEntity.output_dir = '/data/vision/polina/scratch/ruizhi/bidmc_pilot/'
 
 Database.username = 'RadAICoreMod'
 Database.password = '#BIDBos2019#Core'
@@ -8,4 +9,4 @@ Database.server = 'milan.bidmc.harvard.edu\\sql107'
 Database.database = 'RadAISegData'
 Database.driver = '{ODBC Driver 17 for SQL Server}'
 
-DelayedExecutor.delay = 10
+DelayedExecutor.delay = 5
