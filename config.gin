@@ -1,4 +1,4 @@
-ApplicationEntity.ae_title = 'ABDOMINALAI'
+ApplicationEntity.ae_title = 'CXR-EDEMA'
 ApplicationEntity.host = ''
 ApplicationEntity.port = 11114
 ApplicationEntity.output_dir = '/data/vision/polina/scratch/ruizhi/bidmc_pilot/'
