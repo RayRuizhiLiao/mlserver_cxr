@@ -1,7 +1,7 @@
 ApplicationEntity.ae_title = 'CXR-EDEMA'
 ApplicationEntity.host = ''
 ApplicationEntity.port = 11114
-ApplicationEntity.output_dir = '/data/vision/polina/scratch/ruizhi/bidmc_pilot/'
+ApplicationEntity.output_dir = '/images/'
 
 Database.username = 'RadAICoreMod'
 Database.password = '#BIDBos2019#Core'

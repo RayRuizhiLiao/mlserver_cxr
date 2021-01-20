@@ -15,9 +15,46 @@ from mlserver.utils import profiled_method
 from mlserver.utils import try_except
 from mlserver.utils import Path
 
+from resnet_chestxray.model import resnet7_2_1
+from resnet_chestxray.model_utils import load_image
+from resnet_chestxray.model_utils import CenterCrop
+from resnet_chestxray import main_utils
+
+import torch
+import torchvision
+from torch.utils.data import DataLoader
+
+
+def run_inference(image_path, model_architecture='resnet7_2_1', 
+				  checkpoint_path='/opt/mlmodel/data/pytorch_model_epoch300.bin'):
+	device = 'cpu'
+
+	'''
+	Create an instance of a resnet model and load a checkpoint
+	'''
+	output_channels = 4
+	if model_architecture == 'resnet7_2_1':
+		resnet_model = resnet7_2_1(pretrained=True, 
+								   pretrained_model_path=checkpoint_path,
+								   output_channels=output_channels)
+	resnet_model = resnet_model.to(device)
+
+	'''
+	Load the input image
+	'''
+	image = load_image(image_path)
+
+	'''
+	Run model inference on the image
+	'''
+	pred = main_utils.inference(resnet_model, image)
+	pred = pred[0]
+	severity = sum([i*pred[i] for i in range(len(pred))])
+
+	return severity
 
 @gin.configurable
-class PseudoModel(object):
+class CXRModel(object):
     def __init__(self):
 
     	return
@@ -25,6 +62,14 @@ class PseudoModel(object):
     #@on_cpu
     @logged_method
     @profiled_method
-    def __call__(self, study_name):
+    def __call__(self, data_dir, study_name):
         
-        return 1
+        png_path = os.path.join(data_dir, f"{study_name}.png")
+
+        image = load_image(png_path)
+        xray_transform = CenterCrop(2048)
+        image = xray_transform(image)
+        image = 65535*image
+        image = image.astype(np.uint16)
+
+        return run_inference(png_path), image

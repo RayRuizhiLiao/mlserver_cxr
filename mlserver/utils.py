@@ -116,8 +116,7 @@ def dicom_to_png(ds, png_dir, png_name):
     img = 65535*img
     img = img.astype(np.uint16)
 
-    png_path = os.path.join(png_dir, png_name+'.png')
+    png_path = os.path.join(png_dir, f"{png_name}.png")
     cv2.imwrite(png_path, img)
-    print(f"Saved png at {png_path}!")
 
     return

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import functools
 import gin
 import itertools
@@ -18,7 +20,7 @@ from mlserver import transfer_syntax
 from mlserver.core import DicomSaver
 from mlserver.database import Database
 from mlserver.executor import DelayedExecutor
-from mlserver.model_cxr_edema import PseudoModel
+from mlserver.model_cxr_edema import CXRModel
 from mlserver.utils import logged_method
 from mlserver.utils import try_except
 from mlserver.utils import dicom_to_png
@@ -57,7 +59,7 @@ class ApplicationEntity(_ApplicationEntity):
 class Helper(object):
     def __init__(self, output_dir):
         """Shared resources across all threads."""
-        self._model = PseudoModel()
+        self._model = CXRModel()
         self._executor = DelayedExecutor()
         self._executor.start()
         self._output_dir = output_dir
@@ -91,20 +93,16 @@ class Helper(object):
     def _process_study(self, study_name):
         # NiftiConverter()(study_name)
 
-        png_path = os.path.join(self._output_dir, f"{study_name}.png")
-        print(png_path)
-        img = cv2.imread(png_path)
-
-        edema_severity = self._model(study_name)
+        edema_severity, result_img = self._model(self._output_dir, study_name)
 
         result_png_path = os.path.join(self._output_dir, f"{study_name}_{edema_severity}.png")
-        print(result_png_path)
-        cv2.imwrite(result_png_path, img)
+        cv2.imwrite(result_png_path, result_img)
 
         # JsonConverter()(study_name, organs=self._model.organs)
         # SlicePlotter()(study_name)
         # Database().add(Database.SegmentationVol, study_name=study_name)
         print('Study {} has edema severity of {}'.format(study_name, edema_severity))
+        print(f"Grad-CAM PNG image saved at {result_png_path}")
 
 
 def main(_):

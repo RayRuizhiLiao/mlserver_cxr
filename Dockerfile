@@ -1,11 +1,31 @@
-FROM continuumio/miniconda3
+FROM rayruizhiliao/mlmodel_cxr_edema:latest
 
-# Create the environment:
-COPY environment.yml .
-RUN conda env create -f environment.yml
+MAINTAINER Ray Liao <ruizhi@mit.edu>
 
-SHELL ["conda", "run", "-n", "docker_bidmc", "/bin/bash", "-c"]
+RUN apt-get update && apt-get install -y --no-install-recommends \ 
+        dcm2niix \
+        gnupg \
+        pigz \
+        unixodbc-dev \
+        ffmpeg \
+        libsm6 \
+        libxext6 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# The code to run when container is started:
-COPY main.py .
-ENTRYPOINT ["conda", "run", "-n", "docker_bidmc", "python", "main.py"]
+RUN mkdir /opt/mlserver
+
+RUN pip3 install --upgrade pip
+
+COPY requirements.txt /opt/mlserver
+RUN pip3 install --no-cache-dir -r /opt/mlserver/requirements.txt
+
+COPY . /opt/mlserver
+WORKDIR /opt/mlserver
+ENV PYTHONPATH=/opt/mlserver:$PYTHONPATH
+
+RUN chmod +x /opt/mlserver/main.py
+
+RUN mkdir -p /images/
+
+ENTRYPOINT ["/opt/mlserver/main.py"]
