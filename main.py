@@ -48,6 +48,7 @@ class ApplicationEntity(_ApplicationEntity):
 
     def start_server(self, *args, **kwargs):
         logging.info('Server started.')
+        logging.info(f'Listening: ({self._host}, {self._port})...')
         print('Server started.')
         print('Listening: ({},{})...'.format(self._host, self._port))
         super(ApplicationEntity, self).start_server(
@@ -81,12 +82,15 @@ class Helper(object):
         # DicomSaver()(ds)
         # Database().add(cls=Database.Patient, ds=ds).add(cls=Database.Study, ds=ds)
 
-        # study_name = ds.AccessionNumber
+        #accession_number = ds.AccessionNumber
         study_name = ds.StudyID
+        #img_id = f"{accession_number}_{study_name}"
+        print(f"{study_name}.png is stored {self._output_dir}")
         dicom_to_png(ds, self._output_dir, study_name)
-        self._executor.delayed_run(
-            key=study_name,
-            fn=functools.partial(self._process_study, study_name=study_name))
+        self._process_study(study_name)
+        # self._executor.delayed_run(
+        #     key=study_name,
+        #     fn=functools.partial(self._process_study, study_name=study_name))
 
     @try_except(error_code=0xC2FF)
     @logged_method
@@ -108,7 +112,7 @@ class Helper(object):
 def main(_):
     gin.parse_config_file(FLAGS.gin_file)
     # warnings.filterwarnings('ignore') #TODO: revisit if this is necessary
-    logging.get_absl_handler().use_absl_log_file('mlserver')
+    logging.get_absl_handler().use_absl_log_file('mlserver_cxr')
 
     ae = ApplicationEntity()
     ae.start_server(evt_handlers=Helper(output_dir=ae.output_dir).handlers)

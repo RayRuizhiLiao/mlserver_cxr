@@ -28,4 +28,4 @@ RUN chmod +x /opt/mlserver/main.py
 
 RUN mkdir -p /images/
 
-ENTRYPOINT ["/opt/mlserver/main.py"]
+ENTRYPOINT ["/opt/mlserver/main.py", "--log_dir", "/mnt/log"]
