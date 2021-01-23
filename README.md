@@ -13,7 +13,7 @@ sudo docker build -t mlserver_cxr .
 
 To run the Docker image, run 
 ```
-sudo docker run -it -p 127.0.0.1:11114:11114/tcp -v /var/local/:/images/ -v /mnt/log:/mnt/log rayruizhiliao/mlserver_cxr:latest
+sudo docker run -it -p 127.0.0.1:11114:11114/tcp -v /var/local/:/mnt/data/png/ -v /mnt/log:/mnt/log mlserver_cxr:latest
 ```
 
 You may use ```pynetdicom``` to test this server:
