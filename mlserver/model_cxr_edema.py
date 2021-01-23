@@ -62,9 +62,9 @@ class CXRModel(object):
     #@on_cpu
     @logged_method
     @profiled_method
-    def __call__(self, data_dir, study_name):
+    def __call__(self, study_name):
         
-        png_path = os.path.join(data_dir, f"{study_name}.png")
+        png_path = Path.png_path(study_name)
 
         image = load_image(png_path)
         xray_transform = CenterCrop(2048)

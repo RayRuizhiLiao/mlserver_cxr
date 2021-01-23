@@ -18,12 +18,12 @@ from pynetdicom import VerificationPresentationContexts
 
 from mlserver import transfer_syntax
 from mlserver.core import DicomSaver
-from mlserver.database import Database
 from mlserver.executor import DelayedExecutor
 from mlserver.model_cxr_edema import CXRModel
 from mlserver.utils import logged_method
 from mlserver.utils import try_except
 from mlserver.utils import dicom_to_png
+from mlserver.utils import Path
 
 
 flags.DEFINE_string('gin_file', 'config.gin', 'Gin configuration file to load.')
@@ -32,12 +32,11 @@ FLAGS = flags.FLAGS
 
 @gin.configurable
 class ApplicationEntity(_ApplicationEntity):
-    def __init__(self, ae_title, host, port, output_dir='./'):
+    def __init__(self, ae_title, host, port):
         super(ApplicationEntity, self).__init__(ae_title=ae_title)
 
         self._host = host
         self._port = port
-        self.output_dir = output_dir
 
         contexts = itertools.chain(
             StoragePresentationContexts,
@@ -58,12 +57,11 @@ class ApplicationEntity(_ApplicationEntity):
 
 # TODO: need to customize this for our cxr algorithm
 class Helper(object):
-    def __init__(self, output_dir):
+    def __init__(self):
         """Shared resources across all threads."""
         self._model = CXRModel()
         self._executor = DelayedExecutor()
         self._executor.start()
-        self._output_dir = output_dir
 
     @property
     def handlers(self):
@@ -76,7 +74,7 @@ class Helper(object):
         uid = 1
         while not unique:
             uname = f'{name}_{str(uid)}'
-            f_path = os.path.join(self._output_dir, f'{uname}.png')
+            f_path = Path.png_path(uname)
             if os.path.exists(f_path):
                 uid+=1
             else:
@@ -98,7 +96,7 @@ class Helper(object):
             uname = self._create_uname('_')
             logging.warning(f'Neither AccessionNumber nor StudyID exists, so {uname} is used!')
 
-        dicom_to_png(ds, self._output_dir, uname)
+        dicom_to_png(ds, uname)
         print(f'PNG image stored: {uname}.png')
 
         self._process_study(uname)
@@ -110,10 +108,10 @@ class Helper(object):
     @try_except(error_code=0xC2FF)
     @logged_method
     def _process_study(self, study_name):
-        edema_severity, result_img = self._model(self._output_dir, study_name)
+        edema_severity, result_img = self._model(study_name)
         print(f'Study {study_name} has edema severity of {edema_severity}')
 
-        result_png_path = os.path.join(self._output_dir, f"{study_name}_{edema_severity}.png")
+        result_png_path = Path.png_path(f'{study_name}_{edema_severity}')
         cv2.imwrite(result_png_path, result_img)
         logging.info(f'Grad-CAM PNG image saved at {result_png_path}')
         print(f'Grad-CAM PNG image saved at {result_png_path}')
@@ -132,7 +130,7 @@ def main(_):
     logging.get_absl_handler().use_absl_log_file('mlserver_cxr')
 
     ae = ApplicationEntity()
-    ae.start_server(evt_handlers=Helper(output_dir=ae.output_dir).handlers)
+    ae.start_server(evt_handlers=Helper().handlers)
 
 
 if __name__ == '__main__':

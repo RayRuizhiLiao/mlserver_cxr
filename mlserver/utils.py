@@ -7,6 +7,7 @@ from absl import logging
 import cv2
 import numpy as np
 
+
 flags.DEFINE_string('root_dir', '/mnt/data', 'Write received objects to directory.')
 FLAGS = flags.FLAGS
 
@@ -56,6 +57,15 @@ class Path(object):
     def maybe_mkdir(dirpath):
         os.path.isdir(dirpath) or os.makedirs(dirpath)
         return dirpath
+
+    @staticmethod
+    def png_path(uname=None):
+        png_root_dir = Path.maybe_mkdir(os.path.join(FLAGS.root_dir, 'png'))
+
+        if uname is None:
+            return png_root_dir
+        else:
+            return os.path.join(png_root_dir, f'{uname}.png')
 
     @staticmethod
     def dicom_path(study_name=None, sop_instance_uid=None):
@@ -108,7 +118,7 @@ class Path(object):
             return os.path.join(slice_dir, f'{study_name}.png')
 
 @logged_method
-def dicom_to_png(ds, png_dir, png_name):
+def dicom_to_png(ds, png_name):
     img = ds.pixel_array
     img_max_value = ds.LargestImagePixelValue
     img = img.astype(np.double)
@@ -116,7 +126,7 @@ def dicom_to_png(ds, png_dir, png_name):
     img = 65535*img
     img = img.astype(np.uint16)
 
-    png_path = os.path.join(png_dir, f"{png_name}.png")
+    png_path = Path.png_path(png_name)
     cv2.imwrite(png_path, img)
 
     return

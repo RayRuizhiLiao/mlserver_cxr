@@ -1,12 +1,5 @@
 ApplicationEntity.ae_title = 'CXR-EDEMA'
 ApplicationEntity.host = ''
 ApplicationEntity.port = 11114
-ApplicationEntity.output_dir = '/images/'
-
-Database.username = 'RadAICoreMod'
-Database.password = '#BIDBos2019#Core'
-Database.server = 'milan.bidmc.harvard.edu\\sql107'
-Database.database = 'RadAISegData'
-Database.driver = '{ODBC Driver 17 for SQL Server}'
 
 DelayedExecutor.delay = 5
