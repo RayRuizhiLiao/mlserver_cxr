@@ -68,7 +68,8 @@ class Helper(object):
     @property
     def handlers(self):
         return [
-            (evt.EVT_C_STORE, self.handle_c_store)]
+            (evt.EVT_C_STORE, self.handle_c_store),
+            (evt.EVT_C_ECHO, self.handle_c_echo)]
 
     def _create_uname(self, name: str):
         unique = False
@@ -116,6 +117,13 @@ class Helper(object):
         cv2.imwrite(result_png_path, result_img)
         logging.info(f'Grad-CAM PNG image saved at {result_png_path}')
         print(f'Grad-CAM PNG image saved at {result_png_path}')
+
+    @try_except(error_code=0xA701)
+    @logged_method
+    def handle_c_echo(self, event):
+        print('Triggered by EVT_C_ECHO')
+
+        return 0x0000
 
 
 def main(_):
