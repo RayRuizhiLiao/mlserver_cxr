@@ -107,7 +107,7 @@ class Path(object):
         else:
             return os.path.join(slice_dir, f'{study_name}.png')
 
-
+@logged_method
 def dicom_to_png(ds, png_dir, png_name):
     img = ds.pixel_array
     img_max_value = ds.LargestImagePixelValue

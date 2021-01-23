@@ -70,24 +70,38 @@ class Helper(object):
         return [
             (evt.EVT_C_STORE, self.handle_c_store)]
 
+    def _create_uname(self, name: str):
+        unique = False
+        uid = 1
+        while not unique:
+            uname = f'{name}_{str(uid)}'
+            f_path = os.path.join(self._output_dir, f'{uname}.png')
+            if os.path.exists(f_path):
+                uid+=1
+            else:
+                unique = True
+        return uname
+
     @try_except(error_code=0xA700)
     @logged_method
     def handle_c_store(self, event):
         print('Triggered by EVT_C_STORE')
         ds = event.dataset
         ds.file_meta = event.file_meta
-        # ds.is_little_endian = ds.file_meta.TransferSyntaxUID.is_little_endian
-        # ds.is_implicit_VR = ds.file_meta.TransferSyntaxUID.is_implicit_VR
 
-        # DicomSaver()(ds)
-        # Database().add(cls=Database.Patient, ds=ds).add(cls=Database.Study, ds=ds)
+        if hasattr(ds, 'AccessionNumber'):
+            uname = self._create_uname(ds.AccessionNumber)
+        elif hasattr(ds, 'StudyID'):
+            uname = self._create_uname(ds.StudyID)
+        else:
+            uname = self._create_uname('_')
+            logging.warning(f'Neither AccessionNumber nor StudyID exists, so {uname} is used!')
 
-        #accession_number = ds.AccessionNumber
-        study_name = ds.StudyID
-        #img_id = f"{accession_number}_{study_name}"
-        print(f"{study_name}.png is stored {self._output_dir}")
-        dicom_to_png(ds, self._output_dir, study_name)
-        self._process_study(study_name)
+        dicom_to_png(ds, self._output_dir, uname)
+        print(f'PNG image stored: {uname}.png')
+
+        self._process_study(uname)
+        # TODO: investigate if it's necessary to delay model inference
         # self._executor.delayed_run(
         #     key=study_name,
         #     fn=functools.partial(self._process_study, study_name=study_name))
@@ -95,18 +109,13 @@ class Helper(object):
     @try_except(error_code=0xC2FF)
     @logged_method
     def _process_study(self, study_name):
-        # NiftiConverter()(study_name)
-
         edema_severity, result_img = self._model(self._output_dir, study_name)
+        print(f'Study {study_name} has edema severity of {edema_severity}')
 
         result_png_path = os.path.join(self._output_dir, f"{study_name}_{edema_severity}.png")
         cv2.imwrite(result_png_path, result_img)
-
-        # JsonConverter()(study_name, organs=self._model.organs)
-        # SlicePlotter()(study_name)
-        # Database().add(Database.SegmentationVol, study_name=study_name)
-        print('Study {} has edema severity of {}'.format(study_name, edema_severity))
-        print(f"Grad-CAM PNG image saved at {result_png_path}")
+        logging.info(f'Grad-CAM PNG image saved at {result_png_path}')
+        print(f'Grad-CAM PNG image saved at {result_png_path}')
 
 
 def main(_):
