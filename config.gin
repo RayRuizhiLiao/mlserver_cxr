@@ -1,5 +1,3 @@
 ApplicationEntity.ae_title = 'CXR-EDEMA'
 ApplicationEntity.host = ''
 ApplicationEntity.port = 11114
-
-DelayedExecutor.delay = 5

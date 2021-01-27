@@ -16,10 +16,11 @@ from pynetdicom import evt
 from pynetdicom import StoragePresentationContexts
 from pynetdicom import VerificationPresentationContexts
 
+from gradcam.grad_cam import save_gradcam_overlay
+
 from mlserver import transfer_syntax
 from mlserver.core import DicomSaver
-from mlserver.executor import DelayedExecutor
-from mlserver.model_cxr_edema import CXRModel
+from mlserver.model_cxr_edema import CXRModel, CXRModelGCam
 from mlserver.utils import logged_method
 from mlserver.utils import try_except
 from mlserver.utils import dicom_to_png
@@ -59,9 +60,7 @@ class ApplicationEntity(_ApplicationEntity):
 class Helper(object):
     def __init__(self):
         """Shared resources across all threads."""
-        self._model = CXRModel()
-        self._executor = DelayedExecutor()
-        self._executor.start()
+        self._model = CXRModelGCam()
 
     @property
     def handlers(self):
@@ -100,21 +99,23 @@ class Helper(object):
         print(f'PNG image stored: {uname}.png')
 
         self._process_study(uname)
-        # TODO: investigate if it's necessary to delay model inference
-        # self._executor.delayed_run(
-        #     key=study_name,
-        #     fn=functools.partial(self._process_study, study_name=study_name))
 
     @try_except(error_code=0xC2FF)
     @logged_method
     def _process_study(self, study_name):
-        edema_severity, result_img = self._model(study_name)
+        results_gcam, result_img = self._model(study_name)
+        edema_severity, gcam_img, input_img = results_gcam
         print(f'Study {study_name} has edema severity of {edema_severity}')
 
         result_png_path = Path.png_path(f'{study_name}_{edema_severity}')
         cv2.imwrite(result_png_path, result_img)
-        logging.info(f'Grad-CAM PNG image saved at {result_png_path}')
-        print(f'Grad-CAM PNG image saved at {result_png_path}')
+        logging.info(f'Resulting PNG image saved at {result_png_path}')
+        print(f'Resulting PNG image saved at {result_png_path}')
+
+        gcam_png_path = Path.png_path(f'{study_name}_{edema_severity}_gcam')
+        save_gradcam_overlay(gcam_png_path, gcam_img[0], input_img[0])
+        logging.info(f'Grad-CAM PNG image saved at {gcam_png_path}')
+        print(f'Grad-CAM PNG image saved at {gcam_png_path}')
 
     @try_except(error_code=0xA701)
     @logged_method
