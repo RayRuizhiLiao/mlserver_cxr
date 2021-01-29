@@ -120,7 +120,7 @@ class Path(object):
 @logged_method
 def dicom_to_png(ds, png_name):
     img = ds.pixel_array
-    img_max_value = ds.LargestImagePixelValue
+    img_max_value = np.amax(img)
     img = img.astype(np.double)
     img = img/img_max_value
     img = 65535*img

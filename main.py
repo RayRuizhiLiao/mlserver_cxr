@@ -87,13 +87,17 @@ class Helper(object):
         ds = event.dataset
         ds.file_meta = event.file_meta
 
-        if hasattr(ds, 'AccessionNumber'):
-            uname = self._create_uname(ds.AccessionNumber)
-        elif hasattr(ds, 'StudyID'):
-            uname = self._create_uname(ds.StudyID)
+        if hasattr(ds, 'PatientID'):
+            uname = f"p{ds.PatientID}_"
         else:
-            uname = self._create_uname('_')
-            logging.warning(f'Neither AccessionNumber nor StudyID exists, so {uname} is used!')
+            uname = "p_"
+        
+        if hasattr(ds, 'AccessionNumber'):
+            uname += ds.AccessionNumber
+        elif hasattr(ds, 'StudyID'):
+            uname += ds.StudyID
+
+        uname = self._create_uname(uname)
 
         dicom_to_png(ds, uname)
         print(f'PNG image stored: {uname}.png')
